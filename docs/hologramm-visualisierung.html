@@ -1,0 +1,1026 @@
+<title>Holoprojektor H-1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Saira+Condensed:wght@500;600;700&display=swap">
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #06090f;
+    --surface: #0b121b;
+    --surface-2: #101a26;
+    --line: #1d2b3b;
+    --text: #dce6f0;
+    --muted: #8397ac;
+    --holo: #5cc8ff;
+    --holo-dim: #1d4a66;
+    --copper: #d9955a;
+    --display: "Saira Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
+    --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font: 15px/1.6 var(--sans);
+    padding-inline: 16px;
+    padding-block: 28px 56px;
+  }
+  .wrap { max-width: 1280px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+
+  header { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 32px; }
+  .eyebrow { font: 500 11px/1.4 var(--mono); letter-spacing: .16em; text-transform: uppercase; color: var(--holo); margin: 0 0 6px; }
+  h1 { font: 600 clamp(2.4rem, 6vw, 4rem)/0.95 var(--display); letter-spacing: .01em; text-transform: uppercase; margin: 0; text-wrap: balance; }
+  .lead { max-width: 62ch; color: var(--muted); margin: 0; }
+  .lead b { color: var(--text); font-weight: 500; }
+
+  .stage {
+    position: relative;
+    height: clamp(480px, 76vh, 820px);
+    max-width: 100%;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    overflow: hidden;
+    background: #04070b;
+  }
+  .stage canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
+  .stage canvas:active { cursor: grabbing; }
+  .stage::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(ellipse at 50% 45%, transparent 55%, rgba(2,4,7,.55) 100%);
+  }
+  #leaders { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2; }
+  #leaders path { fill: none; stroke: rgba(160,182,204,.5); stroke-width: 1; }
+  #leaders path.on { stroke: var(--copper); }
+  #tags { position: absolute; inset: 0; pointer-events: none; z-index: 3; }
+  .mk, .tg { position: absolute; left: 0; top: 0; pointer-events: auto; cursor: pointer; will-change: transform; }
+  .mk {
+    width: 20px; height: 20px; margin: -10px 0 0 -10px; padding: 0;
+    border-radius: 50%; border: 1px solid rgba(220,230,240,.65);
+    background: rgba(5,9,14,.85); color: var(--text);
+    font: 500 10px/18px var(--mono); text-align: center;
+  }
+  .tg {
+    padding: 4px 9px; border: 1px solid var(--line); border-radius: 2px;
+    background: rgba(6,10,16,.8); color: var(--text);
+    font: 500 11.5px/16px var(--mono); letter-spacing: .02em; white-space: nowrap;
+  }
+  .tg .n { color: var(--muted); margin-right: 7px; font-variant-numeric: tabular-nums; }
+  .mk.on { background: var(--copper); border-color: var(--copper); color: #1a0f06; }
+  .tg.on { border-color: var(--copper); color: #f4dcc6; }
+  .tg.on .n { color: var(--copper); }
+  .mk:focus-visible, .tg:focus-visible, button:focus-visible { outline: 2px solid var(--holo); outline-offset: 2px; }
+
+  .hud {
+    position: absolute; left: 14px; bottom: 12px; z-index: 4;
+    display: flex; flex-wrap: wrap; gap: 4px 18px;
+    font: 400 11px/1.5 var(--mono); color: var(--muted); letter-spacing: .04em;
+    pointer-events: none; max-width: calc(100% - 28px);
+  }
+  .hud b { color: var(--holo); font-weight: 500; margin-left: 6px; font-variant-numeric: tabular-nums; }
+  .hint {
+    position: absolute; right: 14px; bottom: 12px; z-index: 4;
+    font: 400 11px/1.5 var(--mono); color: #5d6f82; pointer-events: none;
+  }
+  #fallback {
+    position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; padding: 24px;
+    text-align: center; color: var(--muted); background: #04070b;
+  }
+
+  .bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .bar button {
+    font: 500 13px/1 var(--sans); color: var(--text);
+    background: var(--surface); border: 1px solid var(--line); border-radius: 3px;
+    padding: 10px 14px; cursor: pointer;
+  }
+  .bar button:hover { border-color: #2f445b; }
+  .seg { display: inline-flex; }
+  .seg button { border-radius: 0; }
+  .seg button:first-child { border-radius: 3px 0 0 3px; }
+  .seg button:last-child { border-radius: 0 3px 3px 0; margin-left: -1px; }
+  .seg button[aria-pressed="true"] { background: var(--holo-dim); border-color: var(--holo); color: #eaf7ff; position: relative; }
+  .tgl { display: inline-flex; align-items: center; gap: 9px; }
+  .tgl::before { content: ""; width: 9px; height: 9px; border: 1px solid var(--muted); border-radius: 1px; }
+  .tgl[aria-pressed="true"]::before { background: var(--holo); border-color: var(--holo); box-shadow: 0 0 8px rgba(92,200,255,.7); }
+  .bar .plain { background: transparent; color: var(--muted); }
+  .bar .spacer { flex: 1 1 auto; }
+
+  .info { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 28px 32px; margin-top: 8px; }
+  .col { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+  h2 { font: 600 1.35rem/1.1 var(--display); letter-spacing: .04em; text-transform: uppercase; margin: 0; color: var(--text); }
+  h2 small { font: 400 11px var(--mono); color: var(--muted); letter-spacing: .06em; margin-left: 8px; text-transform: none; }
+
+  #plist { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 2px 12px; }
+  #plist button {
+    width: 100%; display: flex; gap: 10px; align-items: baseline; text-align: left;
+    background: none; border: 0; border-bottom: 1px solid var(--line);
+    color: var(--text); font: 400 14px/1.3 var(--sans); padding: 8px 2px; cursor: pointer;
+  }
+  #plist button .n { font: 500 11px var(--mono); color: var(--muted); min-width: 18px; font-variant-numeric: tabular-nums; }
+  #plist button:hover { color: #fff; }
+  #plist button[aria-current="true"] { color: #f4dcc6; border-bottom-color: var(--copper); }
+  #plist button[aria-current="true"] .n { color: var(--copper); }
+
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 4px; padding: 18px 20px; display: flex; flex-direction: column; gap: 8px; }
+  .card .k { font: 500 11px var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--copper); }
+  .card h3 { font: 600 1.6rem/1.05 var(--display); letter-spacing: .02em; margin: 0; }
+  .card p { margin: 0; color: #b9c7d5; max-width: 60ch; }
+  .card .spec { font: 400 12.5px/1.5 var(--mono); color: var(--holo); }
+
+  .steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; counter-reset: s; }
+  .steps li { display: grid; grid-template-columns: 28px 1fr; gap: 10px; color: #b9c7d5; }
+  .steps li::before { counter-increment: s; content: counter(s); font: 500 12px/22px var(--mono); color: var(--holo); border: 1px solid var(--holo-dim); border-radius: 50%; width: 24px; height: 24px; text-align: center; }
+  .steps b { color: var(--text); font-weight: 600; }
+
+  .tbl-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  td { padding: 7px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+  td:first-child { color: var(--muted); padding-right: 14px; white-space: nowrap; }
+  td:last-child { font: 400 13px/1.5 var(--mono); font-variant-numeric: tabular-nums; text-align: right; }
+
+  .notes { margin: 0; padding: 0 0 0 18px; color: #b9c7d5; display: flex; flex-direction: column; gap: 8px; }
+  .notes li::marker { color: var(--copper); }
+
+  @media (max-width: 640px) {
+    .hint { display: none; }
+    #plist { grid-template-columns: 1fr; }
+    .bar button { padding: 10px 12px; }
+  }
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <p class="eyebrow">Projektvorschau · Swept-Volume-Display</p>
+      <h1>Holoprojektor H-1</h1>
+    </div>
+    <p class="lead">So sieht dein fertiges Gerät aus. Zwei LED-Panels drehen sich <b>20-mal pro Sekunde</b> unter einer Acrylkuppel und zeichnen dabei ein leuchtendes 3D-Bild in den Raum. Dreh die Ansicht, schalte die Zeitlupe ein oder zieh die Bauteile auseinander.</p>
+  </header>
+
+  <div class="stage" id="stage">
+    <canvas id="c" aria-label="3D-Modell des Holoprojektors"></canvas>
+    <svg id="leaders" aria-hidden="true"></svg>
+    <div id="tags"></div>
+    <div class="hud" id="hud">
+      <span>Drehzahl<b id="h-rpm">1200 U/min</b></span>
+      <span>Motiv<b id="h-mot">Sternjäger</b></span>
+      <span id="h-x-wrap"><span id="h-x-k">Bildrate</span><b id="h-x">20 Bilder/s</b></span>
+    </div>
+    <div class="hint">Ziehen: drehen · Scrollen: zoomen · Bauteil anklicken: Details</div>
+    <div id="fallback" hidden>Die 3D-Ansicht konnte nicht geladen werden. Dein Browser braucht WebGL, und die Seite muss die three.js-Bibliothek laden können.</div>
+  </div>
+
+  <div class="bar" role="toolbar" aria-label="Ansicht steuern">
+    <div class="seg" role="group" aria-label="Motiv">
+      <button id="m-ship" type="button" aria-pressed="true">Sternjäger</button>
+      <button id="m-solar" type="button" aria-pressed="false">Sonnensystem</button>
+    </div>
+    <button class="tgl" id="t-cut" type="button" aria-pressed="true">Schnittansicht</button>
+    <button class="tgl" id="t-exp" type="button" aria-pressed="false">Explosionsansicht</button>
+    <button class="tgl" id="t-slow" type="button" aria-pressed="false">Zeitlupe</button>
+    <button class="tgl" id="t-lab" type="button" aria-pressed="true">Beschriftung</button>
+    <span class="spacer"></span>
+    <button class="plain" id="reset" type="button">Ansicht zurücksetzen</button>
+  </div>
+
+  <section class="info">
+    <div class="col">
+      <h2>Bauteile <small>von oben nach unten</small></h2>
+      <ol id="plist"></ol>
+    </div>
+    <div class="col">
+      <article class="card" id="card" aria-live="polite">
+        <span class="k" id="card-k">Bauteil 2</span>
+        <h3 id="card-h">Bildvolumen</h3>
+        <p id="card-p"></p>
+        <span class="spec" id="card-s"></span>
+      </article>
+      <h2>So entsteht das Bild</h2>
+      <ol class="steps">
+        <li><span><b>Zerlegen.</b> Der Raspberry Pi rechnet das 3D-Modell in 180 senkrechte Scheiben um, eine pro Grad Drehung.</span></li>
+        <li><span><b>Takten.</b> Der Hall-Sensor meldet jede Umdrehung. Der ESP32 auf dem Rotor zeigt bei jedem Grad genau die passende Scheibe.</span></li>
+        <li><span><b>Verschmelzen.</b> Bei 20 Umdrehungen pro Sekunde sieht dein Auge keine Scheiben mehr, sondern einen leuchtenden Körper. Mit „Zeitlupe“ siehst du, wie das Panel das Bild Scheibe für Scheibe aufbaut.</span></li>
+      </ol>
+    </div>
+    <div class="col">
+      <h2>Eckdaten</h2>
+      <div class="tbl-wrap">
+        <table>
+          <tr><td>Gesamthöhe</td><td>ca. 33 cm</td></tr>
+          <tr><td>Sockel</td><td>Ø 28 × 8 cm</td></tr>
+          <tr><td>Bildvolumen</td><td>Ø 16 × 16 cm</td></tr>
+          <tr><td>Auflösung</td><td>64 × 64 px × 180 Scheiben</td></tr>
+          <tr><td>Voxel</td><td>≈ 737.000</td></tr>
+          <tr><td>Drehzahl</td><td>1200 U/min = 20 Hz</td></tr>
+          <tr><td>Datenrate</td><td>≈ 15 MB/s (1 Byte je Voxel)</td></tr>
+          <tr><td>Leistung</td><td>ca. 60–120 W</td></tr>
+          <tr><td>Materialkosten</td><td>ca. 250–350 €</td></tr>
+        </table>
+      </div>
+      <h2>Was die Vorschau vereinfacht</h2>
+      <ul class="notes">
+        <li>Das Bild entsteht nur innerhalb der Kuppel. Frei über dem Tisch schweben wie im Film kann es mit dieser Technik nicht.</li>
+        <li>LEDs können nur leuchten. Schwarz bleibt leer, und die Rückseite des Objekts scheint durch. Das passt zum Hologramm-Look.</li>
+        <li>Im hellen Zimmer wirkt das Bild blass. Am besten sieht es im abgedunkelten Raum aus.</li>
+        <li>Kabel, Schrauben und Platinen sind vereinfacht gezeichnet. Die Maße stimmen ungefähr.</li>
+      </ul>
+    </div>
+  </section>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/environments/RoomEnvironment.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/GammaCorrectionShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  /* ---------- Bauteil-Daten ---------- */
+  const INFO = [
+    { id: "dome",   name: "Acrylkuppel",              short: "Acrylkuppel",
+      desc: "Schützt Finger und Umgebung vor dem Rotor, der mit 1200 U/min dreht. Klares Acryl, damit das Bild von allen Seiten sichtbar bleibt.",
+      spec: "Ø 21 cm · 3 mm Acryl · oben abgeflacht" },
+    { id: "holo",   name: "Bildvolumen",              short: "Hologramm",
+      desc: "Hier entsteht das Bild. Jeder Lichtpunkt ist ein Voxel, also ein Pixel im Raum. Dein Auge setzt die schnell wechselnden Scheiben zu einem festen Körper zusammen.",
+      spec: "Ø 16 × 16 cm · 64 × 64 × 180 ≈ 737.000 Voxel" },
+    { id: "panel",  name: "LED-Panels",               short: "LED-Panels",
+      desc: "Zwei LED-Matrizen Rücken an Rücken. Bei jedem Grad Drehung zeigen sie eine neue Bildscheibe, 180 Scheiben pro halbe Umdrehung.",
+      spec: "2 × 64 × 64 LEDs · Raster 2,5 mm · HUB75-Anschluss" },
+    { id: "rotor",  name: "Rotor-Rahmen und Welle",   short: "Rotor & Welle",
+      desc: "Aluminiumrahmen, der die Panels hält. Er ist mit der Nabe auf der Hohlwelle verschraubt. Durch die Welle laufen die Stromkabel nach oben.",
+      spec: "Hohlwelle Ø 12 mm · Nabe Ø 10 cm" },
+    { id: "esp",    name: "ESP32-S3 Rotor-Controller", short: "ESP32-S3",
+      desc: "Dreht mit dem Panel. Empfängt die Voxeldaten per WLAN vom Pi und schaltet die LEDs exakt im Takt der Drehung um. Daneben sitzt der Spannungswandler.",
+      spec: "Dual-Core 240 MHz · 8 MB PSRAM · WLAN" },
+    { id: "weight", name: "Gegengewicht",             short: "Gegengewicht",
+      desc: "Gleicht das Gewicht der Elektronik auf der anderen Seite aus. Ohne Auswuchten vibriert das ganze Gerät.",
+      spec: "Messing, ca. 50 g · mit Schrauben feinjustierbar" },
+    { id: "hall",   name: "Hall-Sensor und Magnet",   short: "Hall-Sensor",
+      desc: "Der Magnet unter der Nabe fliegt einmal pro Umdrehung über den Sensor. Aus der Zeit zwischen zwei Impulsen berechnet der Controller den genauen Winkel.",
+      spec: "1 Impuls pro Umdrehung · Winkelfehler unter 0,5°" },
+    { id: "lager",  name: "Kugellager",               short: "Kugellager",
+      desc: "Führt die Welle im Deckel, damit der Rotor auch bei hoher Drehzahl ruhig und leise läuft.",
+      spec: "Rillenkugellager 6001 · 12 × 28 × 8 mm" },
+    { id: "motor",  name: "BLDC-Motor",               short: "BLDC-Motor",
+      desc: "Bürstenloser Außenläufer. Die Glocke mit den Magneten dreht sich um die feststehenden Kupferspulen und treibt die Welle direkt an.",
+      spec: "Außenläufer, 12 V · ca. 1200 U/min unter Last" },
+    { id: "slip",   name: "Schleifring",              short: "Schleifring",
+      desc: "Überträgt Strom vom feststehenden Sockel auf die drehende Welle. Schleifbürsten laufen auf Kupferringen.",
+      spec: "6 Kanäle · bis 10 A · Hohlwelle" },
+    { id: "esc",    name: "Motorregler (ESC)",        short: "Motorregler",
+      desc: "Steuert die Spulen des Motors. Der Pi gibt die Solldrehzahl vor und hält sie mit Hilfe des Hall-Sensors konstant.",
+      spec: "12 V · 30 A · Sollwert per PWM" },
+    { id: "pi",     name: "Raspberry Pi 5",           short: "Raspberry Pi 5",
+      desc: "Das Gehirn. Er lädt 3D-Modelle, berechnet die Planetenpositionen, zerlegt alles in Scheiben und streamt sie zum Rotor.",
+      spec: "8 GB RAM · aktiver Kühler · WLAN" },
+    { id: "psu",    name: "Netzteil",                 short: "Netzteil",
+      desc: "Versorgt Panels, Motor und Pi. Die LEDs ziehen bei voller Helligkeit den meisten Strom.",
+      spec: "150 W · 12 V für den Motor · 5 V für Panels und Pi" },
+    { id: "sockel", name: "Sockel",                   short: "Sockel",
+      desc: "Gehäuse aus schwarz eloxiertem Aluminium mit Lüftungsschlitzen und Leuchtring. Gummifüße dämpfen Vibrationen.",
+      spec: "Ø 28 cm · 8 cm hoch" },
+  ];
+  INFO.forEach((p, i) => { p.nr = i + 1; });
+  const INFO_BY = Object.fromEntries(INFO.map(p => [p.id, p]));
+
+  const S = { mode: "ship", cut: true, eT: 0, e: 0, slow: false, labels: true, sel: "holo" };
+
+  /* ---------- UI: Bauteilliste & Karte ---------- */
+  const plist = document.getElementById("plist");
+  INFO.forEach(p => {
+    const li = document.createElement("li");
+    li.innerHTML = '<button type="button" data-id="' + p.id + '"><span class="n">' + p.nr + '</span><span>' + p.name + '</span></button>';
+    plist.appendChild(li);
+  });
+  plist.addEventListener("click", e => { const b = e.target.closest("button"); if (b) select(b.dataset.id); });
+
+  const card = { k: document.getElementById("card-k"), h: document.getElementById("card-h"), p: document.getElementById("card-p"), s: document.getElementById("card-s") };
+  function renderCard() {
+    const p = INFO_BY[S.sel];
+    card.k.textContent = "Bauteil " + p.nr;
+    card.h.textContent = p.name;
+    card.p.textContent = p.desc;
+    card.s.textContent = p.spec;
+    plist.querySelectorAll("button").forEach(b => b.setAttribute("aria-current", b.dataset.id === S.sel ? "true" : "false"));
+  }
+  renderCard();
+
+  const stage = document.getElementById("stage");
+  const canvas = document.getElementById("c");
+  function fail() { document.getElementById("fallback").hidden = false; }
+  if (!window.THREE || !THREE.OrbitControls) { fail(); return; }
+
+  const reduced = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const TAU = Math.PI * 2, deg = d => d * Math.PI / 180;
+  const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
+  const polar = (r, phi, y) => V3(r * Math.sin(phi), y, r * Math.cos(phi));
+  const CUT0 = deg(100), CUTL = deg(240);
+  const HC = 19; // Mitte des Bildvolumens (cm)
+
+  /* ---------- Renderer ---------- */
+  let renderer;
+  try { renderer = new THREE.WebGLRenderer({ canvas, antialias: true }); }
+  catch (err) { fail(); return; }
+  const PR = Math.min(window.devicePixelRatio || 1, 2);
+  renderer.setPixelRatio(PR);
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 0.95;
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x04070b);
+  scene.fog = new THREE.Fog(0x04070b, 110, 260);
+  const camera = new THREE.PerspectiveCamera(34, 1, 0.5, 600);
+  if (THREE.RoomEnvironment) {
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    scene.environment = pmrem.fromScene(new THREE.RoomEnvironment(), 0.04).texture;
+  }
+
+  scene.add(new THREE.HemisphereLight(0x9ab8d8, 0x06080c, 0.22));
+  const key = new THREE.DirectionalLight(0xffe4c8, 0.75); key.position.set(30, 55, 25); scene.add(key);
+  const rim = new THREE.DirectionalLight(0x6fb6ff, 0.55); rim.position.set(-45, 25, -35); scene.add(rim);
+  const holoLight = new THREE.PointLight(0x5cc8ff, 1.3, 45, 2); holoLight.position.set(0, HC, 0); scene.add(holoLight);
+
+  /* ---------- Texturen ---------- */
+  function canvasTex(w, h, draw, srgb = true) {
+    const c = document.createElement("canvas"); c.width = w; c.height = h;
+    draw(c.getContext("2d"), w, h);
+    const t = new THREE.CanvasTexture(c);
+    if (srgb) t.encoding = THREE.sRGBEncoding;
+    t.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    return t;
+  }
+  const ledTex = canvasTex(1024, 1024, (g) => {
+    g.fillStyle = "#07080a"; g.fillRect(0, 0, 1024, 1024);
+    for (let y = 0; y < 64; y++) for (let x = 0; x < 64; x++) {
+      const px = x * 16, py = y * 16;
+      g.fillStyle = "#1c1f24"; g.fillRect(px + 3, py + 3, 10, 10);
+      g.fillStyle = "#4a1a1a"; g.fillRect(px + 4, py + 6, 2, 3);
+      g.fillStyle = "#1a4a24"; g.fillRect(px + 7, py + 6, 2, 3);
+      g.fillStyle = "#1a2a55"; g.fillRect(px + 10, py + 6, 2, 3);
+    }
+  });
+  const perfTex = canvasTex(512, 512, (g) => {
+    const grd = g.createLinearGradient(0, 0, 512, 512); grd.addColorStop(0, "#a4adb8"); grd.addColorStop(1, "#8a939e");
+    g.fillStyle = grd; g.fillRect(0, 0, 512, 512);
+    g.fillStyle = "#1a1e24";
+    for (let y = 0; y < 32; y++) for (let x = 0; x < 32; x++) {
+      g.beginPath(); g.arc(x * 16 + 8 + (y % 2) * 8, y * 16 + 8, 4.2, 0, TAU); g.fill();
+    }
+  });
+  const stickerTex = canvasTex(512, 280, (g, w, h) => {
+    g.fillStyle = "#e7eaee"; g.fillRect(0, 0, w, h);
+    g.fillStyle = "#111"; g.font = "700 64px Arial, sans-serif"; g.fillText("SNT-150", 28, 86);
+    g.font = "500 28px Arial, sans-serif";
+    g.fillText("AC 100–240 V ~ 50/60 Hz", 28, 140);
+    g.fillText("DC 12 V / 8 A · 5 V / 10 A", 28, 184);
+    g.fillText("max. 150 W", 28, 228);
+    g.strokeStyle = "#111"; g.lineWidth = 6; g.beginPath(); g.moveTo(430, 40); g.lineTo(490, 140); g.lineTo(370, 140); g.closePath(); g.stroke();
+    g.font = "700 60px Arial, sans-serif"; g.fillText("!", 420, 132);
+  });
+  const glowTex = canvasTex(256, 256, (g) => {
+    const r = g.createRadialGradient(128, 128, 0, 128, 128, 128);
+    r.addColorStop(0, "rgba(92,200,255,0.32)"); r.addColorStop(0.35, "rgba(92,200,255,0.09)"); r.addColorStop(1, "rgba(92,200,255,0)");
+    g.fillStyle = r; g.fillRect(0, 0, 256, 256);
+  });
+
+  /* ---------- Materialien ---------- */
+  const M = (color, o = {}) => new THREE.MeshStandardMaterial(Object.assign({ color, roughness: 0.5, metalness: 0.2, envMapIntensity: 0.2 }, o));
+  const MAT = {
+    anod:    () => M(0x1c222b, { metalness: 0.75, roughness: 0.36, side: THREE.DoubleSide }),
+    anodTop: () => M(0x232a34, { metalness: 0.7, roughness: 0.42 }),
+    anodIn:  () => M(0x2a313c, { metalness: 0.5, roughness: 0.6, side: THREE.BackSide }),
+    alu:     () => M(0xa9b2be, { metalness: 0.95, roughness: 0.3 }),
+    edge:    () => M(0x9aa4b2, { metalness: 0.9, roughness: 0.2 }),
+    steel:   () => M(0xd0d5dc, { metalness: 1, roughness: 0.18 }),
+    steelD:  () => M(0xd0d5dc, { metalness: 1, roughness: 0.18, side: THREE.DoubleSide }),
+    copper:  () => M(0xc27744, { metalness: 1, roughness: 0.32 }),
+    brass:   () => M(0xc49a48, { metalness: 1, roughness: 0.28 }),
+    black:   () => M(0x0e1013, { metalness: 0.1, roughness: 0.75 }),
+    rubber:  () => M(0x111214, { roughness: 0.92 }),
+    plastic: () => M(0x24282e, { roughness: 0.6 }),
+    bell:    () => M(0x2c313a, { metalness: 0.85, roughness: 0.3 }),
+    pcbG:    () => M(0x1a6a3c, { roughness: 0.55 }),
+    pcbB:    () => M(0x14171b, { roughness: 0.55 }),
+    pcbBlue: () => M(0x1f4f9c, { roughness: 0.5 }),
+    gold:    () => M(0xd7b25a, { metalness: 1, roughness: 0.25 }),
+    wrap:    () => M(0x2653ad, { roughness: 0.4 }),
+    magnet:  () => M(0xb3312c, { metalness: 0.4, roughness: 0.4 }),
+    led:     () => M(0xffffff, { map: ledTex, roughness: 0.35, metalness: 0 }),
+    perf:    () => M(0xffffff, { map: perfTex, metalness: 0.8, roughness: 0.4 }),
+    sticker: () => M(0xffffff, { map: stickerTex, roughness: 0.7 }),
+  };
+
+  /* ---------- Bauteil-System ---------- */
+  const parts = {}, pickables = [], cuttables = [], cutOnly = [], ghost = [];
+  function makePart(id, parent, o = {}) {
+    const g = new THREE.Group();
+    if (o.pos) g.position.copy(o.pos);
+    if (o.rotY) g.rotation.y = o.rotY;
+    parent.add(g);
+    const p = { id, g, home: g.position.clone(), explode: o.explode || V3(0, 0, 0), inside: !!o.inside, rotor: !!o.rotor, anchor: o.anchor || V3(0, 0, 0), meshes: [] };
+    parts[id] = p; return p;
+  }
+  function add(p, geo, mat, x = 0, y = 0, z = 0, parent) {
+    const m = new THREE.Mesh(geo, mat);
+    m.position.set(x, y, z);
+    (parent || p.g).add(m);
+    m.userData.part = p.id; p.meshes.push(m); pickables.push(m);
+    return m;
+  }
+  function addCut(p, makeGeo, mat, x, y, z, parent) {
+    const full = add(p, makeGeo(0, TAU), mat, x, y, z, parent);
+    const cut = add(p, makeGeo(CUT0, CUTL), mat, x, y, z, parent);
+    cuttables.push({ full, cut });
+    return { full, cut };
+  }
+  const Box = (x, y, z) => new THREE.BoxGeometry(x, y, z);
+  const Cyl = (rt, rb, h, s = 32, open = false, a = 0, l = TAU) => new THREE.CylinderGeometry(rt, rb, h, s, 1, open, a, l);
+  function radial(m, phi) { m.rotation.y = phi; return m; }          // lokale z-Achse zeigt nach außen
+  function arcCurve(r, y, a0, a1, n = 96) {
+    const pts = [];
+    for (let i = 0; i <= n; i++) { const a = a0 + (a1 - a0) * i / n; pts.push(V3(r * Math.sin(a), y, r * Math.cos(a))); }
+    return new THREE.CatmullRomCurve3(pts);
+  }
+
+  const base = new THREE.Group(); scene.add(base);
+
+  /* Tisch */
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(600, 600), M(0x0a0e14, { roughness: 0.88, metalness: 0.1, envMapIntensity: 0.04 }));
+  floor.rotation.x = -Math.PI / 2; floor.position.y = -0.6; scene.add(floor);
+  const glow = new THREE.Mesh(new THREE.PlaneGeometry(70, 70), new THREE.MeshBasicMaterial({ map: glowTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+  glow.rotation.x = -Math.PI / 2; glow.position.y = -0.58; scene.add(glow);
+
+  /* 14 · Sockel */
+  const pS = makePart("sockel", base, { anchor: polar(13.95, deg(116), 4.6) });
+  for (let k = 0; k < 4; k++) { const f = polar(11, deg(45 + 90 * k), -0.3); add(pS, Cyl(1.1, 1.2, 0.6, 24), MAT.rubber(), f.x, f.y, f.z); }
+  add(pS, Cyl(13.9, 14, 0.5, 120), MAT.anod(), 0, 0.25, 0);
+  addCut(pS, (a, l) => Cyl(13.6, 14, 7.4, 160, true, a, l), MAT.anod(), 0, 4.2, 0);
+  addCut(pS, (a, l) => Cyl(13.2, 13.55, 7.4, 160, true, a, l), MAT.anodIn(), 0, 4.2, 0);
+  addCut(pS, (a, l) => Cyl(13.6, 13.6, 0.5, 160, false, a, l), MAT.anodTop(), 0, 8.15, 0);
+  [CUT0, CUT0 + CUTL].forEach(phi => {
+    const w = add(pS, Box(0.44, 7.4, 0.04), MAT.edge(), ...polar(13.4, phi, 4.2).toArray()); w.rotation.y = phi - Math.PI / 2; cutOnly.push(w);
+    const t = add(pS, Box(13.6, 0.5, 0.04), MAT.edge(), ...polar(6.8, phi, 8.15).toArray()); t.rotation.y = phi - Math.PI / 2; cutOnly.push(t);
+  });
+  for (let a = 108; a <= 334; a += 6) {
+    if (Math.abs(a - 300) < 5) continue; // Platz für die Kabeldurchführung
+    const v = add(pS, Box(0.28, 3.6, 0.2), MAT.black(), ...polar(13.82, deg(a), 4.0).toArray()); radial(v, deg(a));
+  }
+  const ringMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(0.35, 1.1, 1.9), toneMapped: false });
+  const ringFull = new THREE.Mesh(new THREE.TubeGeometry(arcCurve(13.72, 8.42, 0, TAU, 200), 200, 0.07, 6, true), ringMat);
+  const ringCut = new THREE.Mesh(new THREE.TubeGeometry(arcCurve(13.72, 8.42, CUT0, CUT0 + CUTL, 160), 160, 0.07, 6, false), ringMat);
+  pS.g.add(ringFull, ringCut); cuttables.push({ full: ringFull, cut: ringCut });
+  const gland = add(pS, Cyl(0.55, 0.55, 0.9, 24), MAT.black(), ...polar(14.0, deg(300), 2.2).toArray());
+  gland.rotation.set(Math.PI / 2, deg(300), 0, "YXZ");
+  {
+    const c = new THREE.CatmullRomCurve3([polar(14.3, deg(300), 2.2), polar(16, deg(300), 1.3), polar(19, deg(302), -0.38), polar(30, deg(306), -0.38), polar(55, deg(310), -0.38)]);
+    add(pS, new THREE.TubeGeometry(c, 80, 0.22, 10, false), MAT.rubber());
+  }
+
+  /* 10 · Schleifring (unten auf der Welle) */
+  const pSl = makePart("slip", base, { inside: true, anchor: polar(1.4, deg(40), 2.4) });
+  add(pSl, Box(4.4, 0.3, 1.3), MAT.alu(), 0, 0.65, 0);
+  add(pSl, Cyl(1.3, 1.3, 2.4, 48), MAT.alu(), 0, 2.0, 0);
+  for (let i = 0; i < 5; i++) add(pSl, Cyl(1.34, 1.34, 0.13, 48), MAT.copper(), 0, 1.15 + i * 0.42, 0);
+  add(pSl, Cyl(0.78, 0.78, 0.35, 32), MAT.steel(), 0, 3.38, 0);
+  add(pSl, Box(0.5, 2.2, 0.8), MAT.black(), -1.5, 2.0, 0);
+
+  /* 9 · BLDC-Motor */
+  const pM = makePart("motor", base, { inside: true, explode: V3(0, 5, 0), anchor: polar(3.3, deg(40), 5.8) });
+  add(pM, Box(7.4, 0.35, 1.1), MAT.alu(), 0, 3.75, 0);
+  add(pM, Box(1.1, 0.35, 7.4), MAT.alu(), 0, 3.75, 0);
+  [[3.3, 0], [-3.3, 0], [0, 3.3], [0, -3.3]].forEach(([x, z]) => add(pM, Cyl(0.28, 0.28, 3.1, 12), MAT.brass(), x, 2.05, z));
+  add(pM, Cyl(1.1, 1.1, 2.4, 24), MAT.steel(), 0, 5.3, 0);
+  for (let i = 0; i < 12; i++) { const t = add(pM, Box(0.55, 2.3, 1.05), MAT.copper(), ...polar(2.05, deg(i * 30), 5.3).toArray()); radial(t, deg(i * 30)); }
+  const bell = new THREE.Group(); pM.g.add(bell);
+  for (let i = 0; i < 18; i++) { const b = add(pM, Box(0.5, 2.8, 0.22), MAT.bell(), ...polar(3.05, deg(i * 20), 5.4).toArray(), bell); radial(b, deg(i * 20)); }
+  for (let i = 0; i < 14; i++) { const b = add(pM, Box(0.6, 2.4, 0.16), MAT.black(), ...polar(2.84, deg(i * 360 / 14 + 7), 5.4).toArray(), bell); radial(b, deg(i * 360 / 14 + 7)); }
+  add(pM, Cyl(3.2, 3.2, 0.3, 64), MAT.bell(), 0, 6.95, 0, bell);
+  add(pM, Cyl(3.2, 3.2, 0.3, 64, true), MAT.bell(), 0, 4.1, 0, bell).material.side = THREE.DoubleSide;
+  for (let i = 0; i < 6; i++) add(pM, Cyl(0.35, 0.35, 0.04, 16), MAT.black(), ...polar(1.9, deg(i * 60), 7.11).toArray(), bell);
+
+  /* 8 · Kugellager */
+  const pL = makePart("lager", base, { inside: true, explode: V3(0, 8.5, 0), anchor: polar(2.3, deg(40), 9.4) });
+  addCut(pL, (a, l) => Cyl(3.0, 3.0, 0.25, 64, false, a, l), MAT.anodTop(), 0, 8.525, 0);
+  addCut(pL, (a, l) => Cyl(2.3, 2.3, 0.8, 64, true, a, l), MAT.steelD(), 0, 9.05, 0);
+  add(pL, Cyl(1.0, 1.0, 0.8, 48, true), MAT.steelD(), 0, 9.05, 0);
+  for (let i = 0; i < 14; i++) add(pL, new THREE.SphereGeometry(0.36, 16, 12), MAT.steel(), ...polar(1.62, i * TAU / 14, 9.05).toArray());
+  addCut(pL, (a, l) => { const g = new THREE.RingGeometry(1.0, 2.3, 64, 1, a - Math.PI / 2, l); g.rotateX(-Math.PI / 2); return g; }, MAT.black(), 0, 9.46, 0);
+  for (let k = 0; k < 4; k++) add(pL, Cyl(0.26, 0.26, 0.2, 6), MAT.steel(), ...polar(2.65, deg(45 + 90 * k), 8.75).toArray());
+
+  /* 7 · Hall-Sensor */
+  const HA = deg(40);
+  const pH = makePart("hall", base, { explode: V3(Math.sin(HA) * 5, 2, Math.cos(HA) * 5), anchor: polar(4.4, HA, 9.2) });
+  radial(add(pH, Box(0.5, 0.5, 0.5), MAT.alu(), ...polar(5.9, HA, 8.65).toArray()), HA);
+  radial(add(pH, Box(0.42, 0.18, 1.95), MAT.alu(), ...polar(5.0, HA, 8.95).toArray()), HA);
+  radial(add(pH, Box(0.75, 0.08, 0.6), MAT.pcbBlue(), ...polar(4.4, HA, 9.08).toArray()), HA);
+  radial(add(pH, Box(0.4, 0.12, 0.26), MAT.black(), ...polar(4.4, HA, 9.18).toArray()), HA);
+
+  /* 11 · Motorregler */
+  const EA = deg(292);
+  const pC = makePart("esc", base, { inside: true, pos: polar(7.4, EA, 0.5), rotY: EA, explode: polar(6, EA, 2), anchor: V3(0, 1.2, 0) });
+  add(pC, Box(4.6, 1.1, 2.2), MAT.wrap(), 0, 0.55, 0);
+  const cap = add(pC, Cyl(0.42, 0.42, 1.6, 20), MAT.black(), 0, 1.5, 0.55); cap.rotation.z = Math.PI / 2;
+  add(pC, Box(1.2, 0.02, 0.8), MAT.sticker(), -1.2, 1.11, -0.4);
+
+  /* 12 · Raspberry Pi 5 */
+  const PA = deg(135);
+  const pPi = makePart("pi", base, { inside: true, pos: polar(8.4, PA, 0.5), rotY: PA, explode: polar(7, PA, 3), anchor: V3(-0.6, 1.8, 0.1) });
+  [[3.9, 2.4], [-3.9, 2.4], [3.9, -2.4], [-3.9, -2.4]].forEach(([x, z]) => add(pPi, Cyl(0.22, 0.22, 0.9, 10), MAT.brass(), x, 0.45, z));
+  add(pPi, Box(8.5, 0.16, 5.6), MAT.pcbG(), 0, 0.98, 0);
+  add(pPi, Box(1.3, 0.12, 1.0), MAT.black(), 1.4, 1.12, 1.4);
+  add(pPi, Box(3.6, 0.5, 3.0), MAT.black(), -0.6, 1.32, 0.1);
+  for (let i = 0; i < 9; i++) add(pPi, Box(3.6, 0.3, 0.08), MAT.alu(), -0.6, 1.72, -1.3 + i * 0.35);
+  const fan = new THREE.Group(); fan.position.set(-0.6, 1.95, 0.1); pPi.g.add(fan);
+  add(pPi, Cyl(1.15, 1.15, 0.08, 40), MAT.plastic(), 0, -0.05, 0, fan);
+  for (let i = 0; i < 7; i++) { const b = add(pPi, Box(0.95, 0.04, 0.32), MAT.black(), ...polar(0.6, deg(i * 360 / 7), 0.02).toArray(), fan); b.rotation.set(0.35, deg(i * 360 / 7) + Math.PI / 2, 0, "YXZ"); }
+  add(pPi, Box(1.45, 1.55, 1.35), MAT.steel(), 3.7, 1.84, -1.6);
+  add(pPi, Box(1.45, 1.55, 1.35), MAT.steel(), 3.7, 1.84, 0.1);
+  add(pPi, Box(1.6, 1.35, 1.6), MAT.steel(), 3.6, 1.74, 1.9);
+  add(pPi, Box(5.1, 0.25, 0.5), MAT.black(), -0.9, 1.19, -2.45);
+  {
+    const pins = new THREE.InstancedMesh(Box(0.06, 0.6, 0.06), MAT.gold(), 40); const d = new THREE.Object3D();
+    for (let i = 0; i < 40; i++) { d.position.set(-3.3 + (i % 20) * 0.254, 1.35, -2.58 + Math.floor(i / 20) * 0.254); d.updateMatrix(); pins.setMatrixAt(i, d.matrix); }
+    pins.userData.part = "pi"; pPi.g.add(pins); pPi.meshes.push(pins); pickables.push(pins);
+  }
+  add(pPi, Box(0.9, 0.35, 0.75), MAT.steel(), -3.4, 1.23, 2.5);
+
+  /* 13 · Netzteil */
+  const NA = deg(218);
+  const pN = makePart("psu", base, { inside: true, pos: polar(8.0, NA, 0.5), rotY: NA, explode: polar(6, NA, 1.5), anchor: V3(-3.2, 3.45, 2.0) });
+  add(pN, Box(10, 3.4, 5.5), MAT.perf(), 0, 1.7, 0);
+  add(pN, Box(1.0, 1.3, 5.0), MAT.black(), 5.5, 0.65, 0);
+  for (let i = 0; i < 7; i++) add(pN, Cyl(0.18, 0.18, 0.12, 12), MAT.steel(), 5.5, 1.36, -2.1 + i * 0.7);
+  const st = add(pN, new THREE.PlaneGeometry(4.2, 2.3), MAT.sticker(), -1.8, 3.41, 0.4); st.rotation.x = -Math.PI / 2;
+
+  /* Rotor (dreht sich) */
+  const pivot = new THREE.Group(); base.add(pivot);
+  const pR = makePart("rotor", pivot, { rotor: true, explode: V3(0, 11, 0), anchor: V3(8.35, 26.6, 0.4) });
+  add(pR, Cyl(0.6, 0.6, 9.6, 24), MAT.steel(), 0, 5.6, 0);
+  add(pR, Cyl(5, 5, 0.8, 72), MAT.alu(), 0, 10.0, 0);
+  for (let k = 0; k < 8; k++) add(pR, Cyl(0.28, 0.28, 0.18, 6), MAT.steel(), ...polar(4.2, deg(22.5 + 45 * k), 10.49).toArray());
+  [add(pR, Box(0.5, 17.2, 0.8), MAT.alu(), 8.35, 19, 0),
+   add(pR, Box(0.5, 17.2, 0.8), MAT.alu(), -8.35, 19, 0),
+   add(pR, Box(17.2, 0.5, 0.8), MAT.alu(), 0, 10.65, 0),
+   add(pR, Box(17.2, 0.5, 0.8), MAT.alu(), 0, 27.35, 0)].forEach(m => ghost.push(m));
+  add(parts.hall, Cyl(0.35, 0.35, 0.25, 24), MAT.magnet(), 4.4, 9.475, 0, pR.g);
+
+  /* 3 · LED-Panels, Rücken an Rücken */
+  const pP = makePart("panel", pR.g, { rotor: true, anchor: V3(-5.5, 24.5, 1.25) });
+  const front = new THREE.Group(), back = new THREE.Group(); back.rotation.y = Math.PI; pP.g.add(front, back);
+  [front, back].forEach(grp => {
+    ghost.push(add(pP, Box(15.4, 15.4, 0.7), MAT.plastic(), 0, 19, 0.4, grp));
+    ghost.push(add(pP, Box(16, 16, 0.16), MAT.pcbB(), 0, 19, 0.85, grp));
+    ghost.push(add(pP, Box(16, 16, 0.26), MAT.black(), 0, 19, 1.06, grp));
+    ghost.push(add(pP, new THREE.PlaneGeometry(16, 16), MAT.led(), 0, 19, 1.2, grp));
+  });
+
+  /* 5 · ESP32-S3 + Spannungswandler */
+  const pE = makePart("esp", pR.g, { rotor: true, explode: V3(0, 0, 4), anchor: V3(0, 10.9, 3.2) });
+  [[add(pE, Box(2.6, 0.12, 1.9), MAT.pcbB(), 0, 10.62, 3.2)],
+   [add(pE, Box(1.5, 0.28, 1.25), MAT.steel(), -0.35, 10.82, 3.2)],
+   [add(pE, Box(0.6, 0.04, 1.1), MAT.gold(), 0.95, 10.7, 3.2)],
+   [add(pE, Box(0.35, 0.25, 0.8), MAT.steel(), -1.25, 10.8, 3.2)],
+   [add(pE, Box(1.6, 0.1, 1.2), MAT.pcbG(), -3.1, 10.6, 2.2)],
+   [add(pE, Cyl(0.36, 0.36, 0.42, 16), MAT.black(), -3.3, 10.86, 2.2)]].forEach(([m]) => ghost.push(m));
+  for (let i = 0; i < 3; i++) {
+    const c = new THREE.CatmullRomCurve3([V3(-0.4 + i * 0.4, 10.72, 2.25), V3(-0.4 + i * 0.4, 10.95, 1.6), V3(-0.4 + i * 0.4, 11.0, 0.05)]);
+    ghost.push(add(pE, new THREE.TubeGeometry(c, 16, 0.07, 6, false), MAT.alu()));
+  }
+
+  /* 6 · Gegengewicht */
+  const pW = makePart("weight", pR.g, { rotor: true, explode: V3(0, 0, -4), anchor: V3(0, 11.5, -3.3) });
+  ghost.push(add(pW, Box(3.4, 1.1, 1.6), MAT.brass(), 0, 10.95, -3.3));
+  ghost.push(add(pW, Cyl(0.28, 0.28, 0.2, 6), MAT.steel(), 1.0, 11.6, -3.3));
+  ghost.push(add(pW, Cyl(0.28, 0.28, 0.2, 6), MAT.steel(), -1.0, 11.6, -3.3));
+
+  const blurCyl = new THREE.Mesh(Cyl(8.62, 8.62, 17.2, 64, true), new THREE.MeshBasicMaterial({ color: 0x9fb6cc, transparent: true, opacity: 0.045, side: THREE.DoubleSide, depthWrite: false }));
+  blurCyl.position.y = 19; base.add(blurCyl);
+
+  /* 1 · Acrylkuppel */
+  const pD = makePart("dome", base, { explode: V3(0, 16, 0), anchor: V3(6.5, 30.5, 5.5) });
+  const domeMat = () => new THREE.MeshPhysicalMaterial({ color: 0xdfefff, metalness: 0, roughness: 0.06, transparent: true, opacity: 0.1, envMapIntensity: 0.6, clearcoat: 1, clearcoatRoughness: 0.05, side: THREE.DoubleSide, depthWrite: false });
+  add(pD, Cyl(10.5, 10.5, 19.4, 128, true), domeMat(), 0, 18.1, 0);
+  add(pD, new THREE.SphereGeometry(10.5, 128, 32, 0, TAU, 0, Math.PI / 2), domeMat(), 0, 27.8, 0).scale.y = 0.45;
+  add(pD, new THREE.LatheGeometry([new THREE.Vector2(10.35, 0), new THREE.Vector2(11.1, 0), new THREE.Vector2(11.1, 0.7), new THREE.Vector2(10.35, 0.7), new THREE.Vector2(10.35, 0)], 128), MAT.anodTop(), 0, 8.4, 0);
+
+  makePart("holo", base, { anchor: V3(0, HC + 3.2, 0) });
+
+  /* Kabel im Sockel */
+  const wires = new THREE.Group(); base.add(wires);
+  scene.updateMatrixWorld(true);
+  const wp = (id, x, y, z) => parts[id].g.localToWorld(V3(x, y, z));
+  function bundle(points, colors, r = 0.12, sp = 0.3) {
+    const a = points[0], b = points[points.length - 1];
+    const perp = V3(-(b.z - a.z), 0, b.x - a.x).normalize();
+    colors.forEach((col, i) => {
+      const off = perp.clone().multiplyScalar((i - (colors.length - 1) / 2) * sp);
+      const c = new THREE.CatmullRomCurve3(points.map(p => p.clone().add(off)));
+      wires.add(new THREE.Mesh(new THREE.TubeGeometry(c, 64, r, 8, false), M(col, { roughness: 0.45 })));
+    });
+  }
+  bundle([polar(13.2, deg(300), 2.2), polar(12.2, deg(280), 1.2), polar(11.4, deg(262), 1.1), wp("psu", 5.6, 1.1, 2.3)], [0x151515], 0.2);
+  bundle([wp("psu", 5.5, 1.3, -1.3), polar(5.5, deg(262), 0.9), polar(2.6, deg(268), 1.4), V3(-1.8, 2.0, 0)], [0xc0282b, 0x161616], 0.13, 0.32);
+  bundle([wp("psu", 5.5, 1.3, 0.8), polar(8.2, deg(272), 0.9), wp("esc", -2.35, 0.6, 0.2)], [0xc0282b, 0x161616], 0.14, 0.34);
+  bundle([wp("esc", 2.35, 0.6, 0), polar(4.6, deg(312), 2.6), polar(3.4, deg(318), 4.1)], [0x2b6fd6, 0xe0b52b, 0x1c1c1c], 0.1, 0.26);
+  bundle([wp("psu", -5.0, 0.9, -1.6), polar(6.6, deg(176), 0.8), wp("pi", 3.2, 1.05, -2.9)], [0x121212], 0.14);
+  bundle([wp("pi", -1.8, 1.35, -2.45), polar(5.0, deg(95), 0.9), polar(4.8, deg(40), 0.8), polar(5.4, deg(330), 0.9), wp("esc", 0, 1.1, -1.1)], [0xe8e8e8, 0xd8c24a], 0.06, 0.16);
+  bundle([polar(5.9, HA, 8.4), polar(6.2, HA, 7.4), polar(6.6, deg(75), 4.2), wp("pi", -2.6, 1.35, -2.45)], [0xc0282b, 0x161616, 0x2e9d4f], 0.055, 0.14);
+
+  /* ---------- Hologramm ---------- */
+  const rnd = (() => { let s = 20260925; return () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; }; })();
+  const mkBuf = () => ({ pos: [], br: [] });
+  const push = (B, x, y, z, b) => { B.pos.push(x, y, z); B.br.push(b); };
+  function line(B, a, b, step, br) {
+    const n = Math.max(1, Math.ceil(a.distanceTo(b) / step));
+    for (let i = 0; i <= n; i++) { const p = a.clone().lerp(b, i / n); push(B, p.x, p.y, p.z, br); }
+  }
+  function tube(B, x0, x1, w0, w1, h0, h1, n, br) {
+    for (let i = 0; i < n; i++) {
+      const u = rnd(), x = x0 + (x1 - x0) * u, w = w0 + (w1 - w0) * u, h = h0 + (h1 - h0) * u;
+      let q = rnd() * (4 * w + 4 * h), y, z;
+      if (q < 2 * w) { z = -w + q; y = h; }
+      else if ((q -= 2 * w) < 2 * h) { z = w; y = h - q; }
+      else if ((q -= 2 * h) < 2 * w) { z = w - q; y = -h; }
+      else { q -= 2 * w; z = -w; y = -h + q; }
+      push(B, x, y, z, br);
+    }
+    [[1, 1], [1, -1], [-1, 1], [-1, -1]].forEach(([sy, sz]) => line(B, V3(x0, sy * h0, sz * w0), V3(x1, sy * h1, sz * w1), 0.14, br * 1.5));
+  }
+  function box(B, cx, cy, cz, hx, hy, hz, n, br) {
+    const A = [hy * hz, hx * hz, hx * hy], T = A[0] + A[1] + A[2];
+    for (let i = 0; i < n; i++) {
+      const r = rnd() * T, s = rnd() < 0.5 ? -1 : 1, u = rnd() * 2 - 1, v = rnd() * 2 - 1;
+      if (r < A[0]) push(B, cx + s * hx, cy + u * hy, cz + v * hz, br);
+      else if (r < A[0] + A[1]) push(B, cx + u * hx, cy + s * hy, cz + v * hz, br);
+      else push(B, cx + u * hx, cy + v * hy, cz + s * hz, br);
+    }
+  }
+  function cylX(B, x0, x1, r, cy, cz, n, br) {
+    for (let i = 0; i < n; i++) { const x = x0 + (x1 - x0) * rnd(), t = rnd() * TAU; push(B, x, cy + r * Math.cos(t), cz + r * Math.sin(t), br); }
+  }
+  function ringX(B, x, r, cy, cz, br) {
+    const n = Math.max(8, Math.ceil(TAU * r / 0.12));
+    for (let i = 0; i < n; i++) { const t = i / n * TAU; push(B, x, cy + r * Math.cos(t), cz + r * Math.sin(t), br); }
+  }
+  function halfEll(B, cx, cy, cz, rx, ry, rz, n, br) {
+    for (let i = 0; i < n; i++) {
+      const y = rnd(), t = rnd() * TAU, s = Math.sqrt(1 - y * y);
+      push(B, cx + rx * s * Math.cos(t), cy + ry * y, cz + rz * s * Math.sin(t), br);
+    }
+  }
+  function sphere(B, cx, cy, cz, r, n, brF) {
+    const ga = Math.PI * (3 - Math.sqrt(5));
+    for (let i = 0; i < n; i++) {
+      const y = 1 - (i + 0.5) / n * 2, s = Math.sqrt(1 - y * y), t = i * ga;
+      push(B, cx + r * s * Math.cos(t), cy + r * y, cz + r * s * Math.sin(t), typeof brF === "function" ? brF(y) : brF);
+    }
+  }
+  function circle(B, r, y, step, br, dash) {
+    const n = Math.ceil(TAU * r / step);
+    for (let i = 0; i < n; i++) { if (dash && (i % 6) > 3) continue; const t = i / n * TAU; push(B, r * Math.cos(t), y, r * Math.sin(t), br); }
+  }
+
+  function buildShip() {
+    const B = mkBuf();
+    tube(B, -4.3, 2.6, 0.8, 0.56, 0.72, 0.5, 1000, 0.55);
+    tube(B, 2.6, 6.7, 0.56, 0.1, 0.5, 0.08, 520, 0.6);
+    box(B, -5.0, 0, 0, 0.7, 0.9, 1.0, 380, 0.55);
+    halfEll(B, -0.4, 0.55, 0, 1.6, 0.55, 0.5, 380, 0.9);
+    line(B, V3(-2.0, 0.6, 0), V3(1.2, 0.6, 0), 0.1, 1.2);
+    halfEll(B, -2.7, 0.72, 0, 0.4, 0.38, 0.4, 90, 0.9);
+    line(B, V3(-4.3, 0, 0.81), V3(6.2, 0, 0.15), 0.12, 0.9);
+    line(B, V3(-4.3, 0, -0.81), V3(6.2, 0, -0.15), 0.12, 0.9);
+    const a = 0.23;
+    [1, -1].forEach(s1 => [1, -1].forEach(s2 => {
+      const d = V3(0, s1 * Math.sin(a), s2 * Math.cos(a));
+      const nrm = V3(0, Math.cos(a), -s1 * s2 * Math.sin(a));
+      const at = (x, dist) => V3(x, 0, 0).addScaledVector(d, dist);
+      const rootTE = at(-5.0, 0.8), rootLE = at(-1.4, 0.8), tipLE = at(-2.9, 6.0), tipTE = at(-4.6, 6.0);
+      for (let i = 0; i < 420; i++) {
+        const u = rnd(), v = rnd();
+        const p = rootTE.clone().lerp(rootLE, u).lerp(tipTE.clone().lerp(tipLE, u), v).addScaledVector(nrm, rnd() < 0.5 ? 0.05 : -0.05);
+        push(B, p.x, p.y, p.z, 0.5);
+      }
+      line(B, rootLE, tipLE, 0.12, 1.0); line(B, rootTE, tipTE, 0.12, 1.0); line(B, tipLE, tipTE, 0.12, 1.0);
+      line(B, at(-3.0, 1.2), at(-3.7, 5.8), 0.14, 0.75);
+      const e = d.clone().multiplyScalar(1.35);
+      cylX(B, -6.1, -2.5, 0.52, e.y, e.z, 260, 0.6);
+      ringX(B, -6.1, 0.52, e.y, e.z, 1.6); ringX(B, -6.1, 0.34, e.y, e.z, 1.6); ringX(B, -6.1, 0.16, e.y, e.z, 1.8);
+      ringX(B, -2.5, 0.52, e.y, e.z, 0.9); ringX(B, -2.45, 0.3, e.y, e.z, 0.7);
+      const c = d.clone().multiplyScalar(6.15);
+      cylX(B, -4.6, -2.0, 0.26, c.y, c.z, 70, 0.7);
+      cylX(B, -2.0, 3.4, 0.1, c.y, c.z, 90, 0.8);
+      line(B, V3(-2.0, c.y, c.z), V3(3.6, c.y, c.z), 0.1, 1.0);
+      cylX(B, 3.0, 3.6, 0.18, c.y, c.z, 30, 1.0);
+    }));
+    return B;
+  }
+
+  const holoUniforms = {
+    uTime: { value: 0 }, uSlow: { value: 0 }, uPanel: { value: 0 }, uScale: { value: 800 },
+    uGlitch: { value: 0 }, uFlick: { value: reduced ? 0.2 : 1 }, uGain: { value: 1 },
+    uColor: { value: new THREE.Color(0.3, 0.74, 1.0) },
+  };
+  const holoMat = new THREE.ShaderMaterial({
+    uniforms: holoUniforms, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+    vertexShader: `
+      uniform float uTime, uSlow, uPanel, uScale, uGlitch, uFlick;
+      attribute float aBright; attribute float aRand;
+      varying float vA;
+      void main() {
+        vec4 wp = modelMatrix * vec4(position, 1.0);
+        wp.x += uGlitch * sin(wp.y * 9.0 + uTime * 40.0) * 0.35;
+        float r = length(wp.xz);
+        float a = atan(wp.z, wp.x);
+        const float QA = 0.017453293;
+        float rq = floor(r / 0.25 + 0.5) * 0.25;
+        float aq = floor(a / QA + 0.5) * QA;
+        float yq = floor(wp.y / 0.25 + 0.5) * 0.25;
+        wp.xyz = vec3(rq * cos(aq), yq, rq * sin(aq));
+        float inside = step(rq, 8.0) * step(11.0, yq) * step(yq, 27.0);
+        float d = mod(a - uPanel, 3.14159265);
+        float trail = exp(-d * 1.6) + 2.5 * exp(-d * 30.0);
+        float lit = mix(1.0, trail, uSlow);
+        float scan = 0.68 + 0.32 * sin(yq * 6.0 - uTime * 5.0);
+        float fl = 1.0 - uFlick * (0.5 + 0.5 * sin(uTime * 47.0 + aRand * 40.0)) * 0.3;
+        vA = aBright * lit * scan * fl * inside;
+        vec4 mv = viewMatrix * wp;
+        gl_PointSize = max(1.5, 0.3 * uScale / -mv.z);
+        gl_Position = projectionMatrix * mv;
+      }`,
+    fragmentShader: `
+      uniform vec3 uColor; uniform float uGain;
+      varying float vA;
+      void main() {
+        vec2 c = gl_PointCoord - 0.5; float r = length(c) * 2.0;
+        if (r > 1.0) discard;
+        float core = (1.0 - r); core *= core;
+        gl_FragColor = vec4(uColor * (0.55 + 1.3 * core), vA * uGain * (0.35 + 0.65 * core));
+      }`,
+  });
+  function points(B) {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.Float32BufferAttribute(B.pos, 3));
+    g.setAttribute("aBright", new THREE.Float32BufferAttribute(B.br, 1));
+    const rr = new Float32Array(B.br.length); for (let i = 0; i < rr.length; i++) rr[i] = rnd();
+    g.setAttribute("aRand", new THREE.BufferAttribute(rr, 1));
+    const p = new THREE.Points(g, holoMat); p.frustumCulled = false; return p;
+  }
+
+  const holo = new THREE.Group(); base.add(holo);
+  const ship = new THREE.Group(); ship.position.y = HC; ship.add(points(buildShip())); holo.add(ship);
+
+  const emitter = new THREE.Group(); holo.add(emitter);
+  { const B = mkBuf(); circle(B, 2.2, 11.3, 0.2, 0.55, true); circle(B, 4.6, 11.3, 0.22, 0.28, false); circle(B, 7.4, 11.3, 0.25, 0.18, true); emitter.add(points(B)); }
+
+  const solar = new THREE.Group(); solar.position.y = HC; solar.rotation.x = 0.32; solar.visible = false; holo.add(solar);
+  const PLANETS = [
+    { r: 2.3,  s: 0.2,  L0: 252.25, P: 87.969 },
+    { r: 3.0,  s: 0.32, L0: 181.98, P: 224.701 },
+    { r: 3.8,  s: 0.34, L0: 100.46, P: 365.256, moon: true },
+    { r: 4.6,  s: 0.26, L0: 355.45, P: 686.98 },
+    { r: 5.7,  s: 0.7,  L0: 34.40,  P: 4332.59, bands: true },
+    { r: 6.85, s: 0.55, L0: 49.94,  P: 10759.22, ring: true },
+  ];
+  {
+    const B = mkBuf();
+    sphere(B, 0, 0, 0, 1.4, 1250, 1.25);
+    for (let i = 0; i < 260; i++) { const rr = 1.45 + rnd() * 0.45, t = rnd() * TAU, y = rnd() * 2 - 1, s = Math.sqrt(1 - y * y); push(B, rr * s * Math.cos(t), rr * y, rr * s * Math.sin(t), 0.25); }
+    PLANETS.forEach(p => circle(B, p.r, 0, 0.22, 0.32, false));
+    solar.add(points(B));
+  }
+  PLANETS.forEach(p => {
+    p.g = new THREE.Group(); solar.add(p.g);
+    const B = mkBuf();
+    const n = Math.max(28, Math.round(4 * Math.PI * p.s * p.s / 0.028));
+    sphere(B, 0, 0, 0, p.s, n, p.bands ? (y => 0.75 + 0.3 * Math.sin(y * 12)) : 0.95);
+    p.g.add(points(B));
+    if (p.ring) {
+      const R = mkBuf();
+      for (let i = 0; i < 380; i++) { const rr = 0.72 + rnd() * 0.3, t = rnd() * TAU; push(R, rr * Math.cos(t), 0, rr * Math.sin(t), 0.6); }
+      const ring = points(R); ring.rotation.x = 0.45; p.g.add(ring);
+    }
+    if (p.moon) {
+      p.moonG = new THREE.Group(); p.g.add(p.moonG);
+      const Mb = mkBuf(); sphere(Mb, 0.7, 0, 0, 0.1, 24, 0.9); p.moonG.add(points(Mb));
+    }
+  });
+
+  /* ---------- Nachbearbeitung (Leuchten) ---------- */
+  let composer = null, bloom = null;
+  if (THREE.EffectComposer && THREE.UnrealBloomPass && THREE.GammaCorrectionShader) {
+    composer = new THREE.EffectComposer(renderer);
+    composer.addPass(new THREE.RenderPass(scene, camera));
+    bloom = new THREE.UnrealBloomPass(new THREE.Vector2(512, 512), 1.25, 0.5, 0.72);
+    composer.addPass(bloom);
+    composer.addPass(new THREE.ShaderPass(THREE.GammaCorrectionShader));
+  }
+
+  /* ---------- Kamera & Steuerung ---------- */
+  const controls = new THREE.OrbitControls(camera, canvas);
+  controls.enableDamping = true; controls.dampingFactor = 0.08;
+  controls.minDistance = 26; controls.maxDistance = 170;
+  controls.minPolarAngle = deg(8); controls.maxPolarAngle = deg(88);
+  controls.enablePan = false;
+  function resetView() {
+    const w = stage.clientWidth, h = stage.clientHeight, asp = w / h;
+    const dist = Math.min(150, asp >= 1.15 ? 74 : 74 * 1.15 / asp * 0.92);
+    const az = deg(36), el = deg(21);
+    controls.target.set(0, 15.5, 0);
+    camera.position.set(Math.sin(az) * Math.cos(el) * dist, 15.5 + Math.sin(el) * dist, Math.cos(az) * Math.cos(el) * dist);
+    controls.update();
+  }
+
+  /* ---------- Beschriftungen ---------- */
+  const tagsEl = document.getElementById("tags"), svg = document.getElementById("leaders");
+  const NS = "http://www.w3.org/2000/svg";
+  const labels = INFO.map(p => {
+    const mk = document.createElement("button"); mk.type = "button"; mk.className = "mk"; mk.textContent = p.nr; mk.setAttribute("aria-label", p.name);
+    const tg = document.createElement("button"); tg.type = "button"; tg.className = "tg"; tg.innerHTML = '<span class="n">' + p.nr + '</span>' + p.short;
+    const path = document.createElementNS(NS, "path");
+    [mk, tg].forEach(el => el.addEventListener("click", () => select(p.id)));
+    tagsEl.append(mk, tg); svg.appendChild(path);
+    return { id: p.id, mk, tg, path, w: 120, x: 0, y: 0, ly: 0, vis: false };
+  });
+  function measure() { labels.forEach(l => { const hid = l.tg.hidden; l.tg.hidden = false; l.w = l.tg.offsetWidth || 120; l.tg.hidden = hid; }); }
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(measure);
+
+  let W = 1, H = 1, wide = true;
+  const tmp = new THREE.Vector3(), Y = V3(0, 1, 0);
+  let rotA = 0;
+  function anchorWorld(p) {
+    const v = p.anchor.clone();
+    if (p.rotor) {
+      let g = p.g; while (g && g !== pivot) { v.add(g.position); g = g.parent; }
+      v.applyAxisAngle(Y, S.slow ? rotA : 0);
+      return v;
+    }
+    return p.g.localToWorld(v);
+  }
+  function updateOverlay() {
+    const L = [], R = [];
+    labels.forEach(l => {
+      const p = parts[l.id];
+      let vis = !(p.inside && !S.cut && S.e < 0.3);
+      if (vis) {
+        tmp.copy(anchorWorld(p)).project(camera);
+        l.x = (tmp.x * 0.5 + 0.5) * W; l.y = (-tmp.y * 0.5 + 0.5) * H;
+        vis = tmp.z < 1 && l.x > 4 && l.x < W - 4 && l.y > 4 && l.y < H - 4;
+      }
+      l.vis = vis;
+      l.mk.hidden = !vis || !S.labels;
+      const on = l.id === S.sel;
+      l.mk.classList.toggle("on", on); l.tg.classList.toggle("on", on); l.path.classList.toggle("on", on);
+      if (vis && S.labels) l.mk.style.transform = "translate(" + l.x.toFixed(1) + "px," + l.y.toFixed(1) + "px)";
+      if (vis && S.labels && wide) (l.x < W / 2 ? L : R).push(l);
+      else { l.tg.hidden = true; l.path.setAttribute("d", ""); }
+    });
+    const TH = 26, GAP = 6, TOP = 14, BOT = H - 44;
+    [[L, "L"], [R, "R"]].forEach(([list, side]) => {
+      list.sort((a, b) => a.y - b.y);
+      let prev = TOP - GAP;
+      list.forEach(l => { l.ly = Math.max(l.y - TH / 2, prev + GAP); prev = l.ly + TH; });
+      let lim = BOT;
+      for (let i = list.length - 1; i >= 0; i--) { const l = list[i]; if (l.ly + TH > lim) l.ly = lim - TH; lim = l.ly - GAP; }
+      list.forEach(l => {
+        const lx = side === "L" ? 14 : W - 14 - l.w;
+        const edge = side === "L" ? lx + l.w : lx;
+        const elbow = side === "L" ? edge + 18 : edge - 18;
+        const cy = l.ly + TH / 2;
+        l.tg.hidden = false;
+        l.tg.style.transform = "translate(" + lx.toFixed(1) + "px," + l.ly.toFixed(1) + "px)";
+        l.path.setAttribute("d", "M" + l.x.toFixed(1) + "," + l.y.toFixed(1) + "L" + elbow.toFixed(1) + "," + cy.toFixed(1) + "L" + edge.toFixed(1) + "," + cy.toFixed(1));
+      });
+    });
+  }
+
+  /* ---------- Auswahl ---------- */
+  const COPPER = new THREE.Color(0xd9955a), BLACK = new THREE.Color(0);
+  function select(id) {
+    if (!INFO_BY[id]) return;
+    const old = parts[S.sel];
+    if (old) old.meshes.forEach(m => { if (m.material.emissive) m.material.emissive.copy(BLACK); });
+    S.sel = id; renderCard();
+  }
+  const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+  let down = null;
+  canvas.addEventListener("pointerdown", e => { down = [e.clientX, e.clientY]; });
+  canvas.addEventListener("pointerup", e => {
+    if (!down || Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 5) return;
+    const r = canvas.getBoundingClientRect();
+    ndc.set((e.clientX - r.left) / r.width * 2 - 1, -(e.clientY - r.top) / r.height * 2 + 1);
+    ray.setFromCamera(ndc, camera);
+    const isVis = o => { for (; o; o = o.parent) if (!o.visible) return false; return true; };
+    const hits = ray.intersectObjects(pickables, false).filter(h => isVis(h.object));
+    const hit = hits.find(h => h.object.userData.part !== "dome") || hits[0];
+    if (hit) select(hit.object.userData.part);
+  });
+
+  /* ---------- Schalter ---------- */
+  const $ = id => document.getElementById(id);
+  function setPressed(el, on) { el.setAttribute("aria-pressed", on ? "true" : "false"); }
+  function applyCut() {
+    cuttables.forEach(c => { c.full.visible = !S.cut; c.cut.visible = S.cut; });
+    cutOnly.forEach(m => { m.visible = S.cut; });
+  }
+  function applyGhost() {
+    const on = !S.slow;
+    ghost.forEach(m => { const mt = m.material; mt.transparent = on; mt.opacity = on ? 0.11 : 1; mt.depthWrite = !on; mt.needsUpdate = true; });
+    blurCyl.visible = on;
+  }
+  function setMode(m) {
+    S.mode = m; ship.visible = m === "ship"; solar.visible = m === "solar";
+    setPressed($("m-ship"), m === "ship"); setPressed($("m-solar"), m === "solar");
+    $("h-mot").textContent = m === "ship" ? "Sternjäger" : "Sonnensystem";
+  }
+  $("m-ship").onclick = () => setMode("ship");
+  $("m-solar").onclick = () => setMode("solar");
+  $("t-cut").onclick = () => { S.cut = !S.cut; setPressed($("t-cut"), S.cut); applyCut(); };
+  $("t-exp").onclick = () => { S.eT = S.eT ? 0 : 1; setPressed($("t-exp"), !!S.eT); };
+  $("t-slow").onclick = () => { S.slow = !S.slow; setPressed($("t-slow"), S.slow); applyGhost(); };
+  $("t-lab").onclick = () => { S.labels = !S.labels; setPressed($("t-lab"), S.labels); };
+  $("reset").onclick = resetView;
+  applyCut(); applyGhost();
+
+  function resize() {
+    W = stage.clientWidth; H = stage.clientHeight; wide = W >= 900;
+    renderer.setSize(W, H, false);
+    camera.aspect = W / H; camera.updateProjectionMatrix();
+    if (composer) { composer.setPixelRatio(PR); composer.setSize(W, H); }
+    holoUniforms.uScale.value = PR * H / (2 * Math.tan(deg(camera.fov / 2)));
+    measure();
+  }
+  resize(); resetView();
+  if (window.ResizeObserver) new ResizeObserver(() => resize()).observe(stage);
+  else window.addEventListener("resize", resize);
+
+  /* ---------- Animation ---------- */
+  const J2000 = Date.UTC(2000, 0, 1, 12);
+  const fmt = new Intl.DateTimeFormat("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
+  let simDays = 0, last = performance.now(), t = 0, glitchUntil = 0, nextGlitch = 4, hudT = 0;
+  const hud = { rpm: $("h-rpm"), k: $("h-x-k"), x: $("h-x") };
+
+  function frame(now) {
+    const dt = Math.min(0.05, (now - last) / 1000); last = now; t += dt;
+
+    S.e += (S.eT - S.e) * Math.min(1, dt * 5);
+    Object.values(parts).forEach(p => p.g.position.copy(p.home).addScaledVector(p.explode, S.e));
+    front.position.z = 3.2 * S.e; back.position.z = -3.2 * S.e;
+    wires.visible = S.e < 0.02;
+
+    rotA = S.slow ? (rotA + dt * 0.8) % TAU : (rotA + 2.27) % TAU;
+    pivot.rotation.y = rotA; bell.rotation.y = rotA;
+    fan.rotation.y += dt * 14;
+
+    holoUniforms.uTime.value = t;
+    holoUniforms.uSlow.value = S.slow ? 1 : 0;
+    holoUniforms.uPanel.value = -rotA;
+    if (!reduced && t > nextGlitch) { glitchUntil = t + 0.12; nextGlitch = t + 4 + Math.random() * 6; }
+    holoUniforms.uGlitch.value = t < glitchUntil ? 1 : 0;
+    holoUniforms.uGain.value = S.sel === "holo" ? 1.15 : 1;
+    holoLight.intensity = 1.2 + (reduced ? 0 : Math.sin(t * 31) * 0.08);
+
+    const sp = reduced ? 0.3 : 1;
+    ship.rotation.y = t * 0.32 * sp;
+    ship.rotation.z = Math.sin(t * 0.5) * 0.08 * sp;
+    ship.position.y = HC + Math.sin(t * 0.8) * 0.4 * sp;
+    emitter.rotation.y = -t * 0.35 * sp;
+
+    if (S.mode === "solar") {
+      simDays += dt * 25 * sp;
+      const days = (Date.now() - J2000) / 864e5 + simDays;
+      PLANETS.forEach(p => {
+        const L = deg(p.L0 + 360 * days / p.P);
+        p.g.position.set(p.r * Math.cos(L), 0, -p.r * Math.sin(L));
+        p.g.rotation.y = t * 0.6;
+        if (p.moonG) p.moonG.rotation.y = days / 27.3 * TAU;
+      });
+      solar.children[0].rotation.y = t * 0.1;
+    }
+
+    const sel = parts[S.sel];
+    if (sel) { const k = 0.28 + 0.16 * Math.sin(t * 4); sel.meshes.forEach(m => { if (m.material.emissive) m.material.emissive.copy(COPPER).multiplyScalar(k); }); }
+
+    if (t - hudT > 0.1) {
+      hudT = t;
+      if (S.slow) { hud.rpm.textContent = "Zeitlupe"; hud.k.textContent = "Winkel"; hud.x.textContent = String(Math.round(rotA * 180 / Math.PI)).padStart(3, "0") + "°"; }
+      else if (S.mode === "solar") { hud.rpm.textContent = "1200 U/min"; hud.k.textContent = "Planetenstand"; hud.x.textContent = fmt.format(new Date(Date.now() + simDays * 864e5)) + " · Zeitraffer"; }
+      else { hud.rpm.textContent = "1200 U/min"; hud.k.textContent = "Bildrate"; hud.x.textContent = "20 Bilder/s"; }
+    }
+
+    controls.update();
+    if (composer) composer.render(); else renderer.render(scene, camera);
+    updateOverlay();
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
